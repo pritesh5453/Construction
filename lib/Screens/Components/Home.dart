@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:construction/Screens/Components/Attendence_Cal.dart';
 import 'package:construction/Screens/Components/Attendence_History.dart';
-import 'package:construction/Screens/Components/Location.dart';
+import 'package:construction/Screens/Components/FaceCaptureScreen.dart';
 import 'package:construction/Screens/Authentication/Login.dart';
 import 'package:construction/Screens/Authentication/Navbar.dart';
 import 'package:construction/Screens/Components/Payment_History.dart';
-import 'package:construction/Screens/StockDetailScreen.dart';
 import 'dart:io';
+
+
 
 // ✅ Logout popup function
 void showLogoutPopup(BuildContext context) {
@@ -105,16 +106,43 @@ void showLogoutPopup(BuildContext context) {
 }
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final String selectedLanguageCode;
+  final Function(String) onLanguageChanged;
+
+  const HomeScreen({
+    super.key,
+    required this.selectedLanguageCode,
+    required this.onLanguageChanged,
+  });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // Handle Back Button Press
+  bool _isPunchedIn = false;
+  bool _isPunchedOut = false;
+
+  // Language display names and their corresponding codes
+  final Map<String, String> languageMap = {
+    'English': 'en',
+    'Marathi': 'mr',
+    'Hindi': 'hi',
+  };
+
+  final List<String> languages = ['English', 'Marathi', 'Hindi'];
+
+  String getLanguageFromCode(String code) {
+    // Find the display name for the corresponding code
+    for (var entry in languageMap.entries) {
+      if (entry.value == code) {
+        return entry.key;
+      }
+    }
+    return 'English'; // Default fallback
+  }
+
   Future<bool> _onWillPop() async {
-    // Exit the app directly
     exit(0);
     return false;
   }
@@ -122,7 +150,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-      onWillPop: _onWillPop, // Add this to prevent going back to LoginPage
+      onWillPop: _onWillPop,
       child: Scaffold(
         appBar: AppBar(
           title: const Text(
@@ -141,7 +169,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
           ),
         ),
-        bottomNavigationBar: Navbar(),
+        bottomNavigationBar: const Navbar(),
         drawer: Drawer(
           child: ListView(
             padding: EdgeInsets.zero,
@@ -188,8 +216,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 },
               ),
               ListTile(
-                leading: Icon(Icons.edit_calendar),
-                title: Text(
+                leading: const Icon(Icons.edit_calendar),
+                title: const Text(
                   'Attendance History   >',
                   style: TextStyle(fontFamily: 'Source Sans 3'),
                 ),
@@ -202,11 +230,34 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                 },
               ),
+              ListTile(
+                leading: const Icon(Icons.language),
+                title: const Text(
+                  'Select Language',
+                  style: TextStyle(fontFamily: 'Source Sans 3'),
+                ),
+                trailing: DropdownButton<String>(
+                  value: getLanguageFromCode(widget.selectedLanguageCode),
+                  items:
+                      languages.map((lang) {
+                        return DropdownMenuItem<String>(
+                          value: lang,
+                          child: Text(lang),
+                        );
+                      }).toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      String languageCode = languageMap[value] ?? 'en';
+                      widget.onLanguageChanged(languageCode);
+                    }
+                  },
+                ),
+              ),
               const SizedBox(height: 430),
               ListTile(
                 leading: const Icon(Icons.settings),
                 title: const Text(
-                  'settings   >',
+                  'Settings   >',
                   style: TextStyle(fontFamily: 'Source Sans 3'),
                 ),
                 onTap: () {
@@ -290,20 +341,33 @@ class _HomeScreenState extends State<HomeScreen> {
                                 Row(
                                   children: [
                                     ElevatedButton(
-                                      onPressed: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder:
-                                                (context) =>
-                                                    const FaceCaptureScreen(),
-                                          ),
-                                        );
-                                      },
+                                      onPressed:
+                                          _isPunchedIn
+                                              ? null
+                                              : () {
+                                                setState(() {
+                                                  _isPunchedIn = true;
+                                                  _isPunchedOut = false;
+                                                });
+
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder:
+                                                        (
+                                                          context,
+                                                        ) => FaceCaptureScreen(
+                                                          punchInTime:
+                                                              DateTime.now(),
+                                                        ),
+                                                  ),
+                                                );
+                                              },
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(
-                                          0xFFE85426,
-                                        ),
+                                        backgroundColor:
+                                            _isPunchedIn
+                                                ? Colors.grey
+                                                : const Color(0xFFE85426),
                                         shape: RoundedRectangleBorder(
                                           borderRadius: BorderRadius.circular(
                                             8,
@@ -320,18 +384,20 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                     const SizedBox(width: 10),
                                     ElevatedButton(
-                                      onPressed: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder:
-                                                (context) =>
-                                                    const StockDetailScreen(),
-                                          ),
-                                        );
-                                      },
+                                      onPressed:
+                                          _isPunchedIn && !_isPunchedOut
+                                              ? () {
+                                                setState(() {
+                                                  _isPunchedOut = true;
+                                                  _isPunchedIn = false;
+                                                });
+                                              }
+                                              : null,
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.grey,
+                                        backgroundColor:
+                                            _isPunchedOut
+                                                ? Colors.grey
+                                                : const Color(0xFFE85426),
                                         shape: RoundedRectangleBorder(
                                           borderRadius: BorderRadius.circular(
                                             8,
@@ -341,7 +407,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       child: const Text(
                                         "Punch out",
                                         style: TextStyle(
-                                          color: Colors.black,
+                                          color: Colors.white,
                                           fontFamily: 'Source Sans 3',
                                         ),
                                       ),

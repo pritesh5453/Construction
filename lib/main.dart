@@ -1,10 +1,10 @@
-import 'package:construction/Screens/Authentication/Login.dart';
+import 'package:construction/Screens/Components/Home.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  // Set system UI style globally
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -16,28 +16,46 @@ void main() {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    WidgetsFlutterBinding.ensureInitialized();
-    SystemChrome.setSystemUIOverlayStyle(
-      SystemUiOverlayStyle(
-        statusBarBrightness: Brightness.dark,
-        statusBarColor: Colors.transparent, // Makes status bar transparent
-        systemNavigationBarColor: Colors.white, // Navigation bar color
-        statusBarIconBrightness: Brightness.dark, // Status bar icons color
-      ),
-    );
+  State<MyApp> createState() => _MyAppState();
+}
 
+class _MyAppState extends State<MyApp> {
+  String selectedLanguageCode = 'en'; // Default language
+
+  void updateLanguage(String langCode) {
+    setState(() {
+      selectedLanguageCode = langCode;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: true,
+      debugShowCheckedModeBanner: false,
       title: 'MM Precise',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.orange),
+        useMaterial3: true,
       ),
-      home: const LoginPage(),
+      locale: Locale(selectedLanguageCode),
+      supportedLocales: const [
+        Locale('en'), // English
+        Locale('hi'), // Hindi
+        Locale('mr'), // Marathi
+      ],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      home: HomeScreen(
+        selectedLanguageCode: selectedLanguageCode,
+        onLanguageChanged: updateLanguage,
+      ),
     );
   }
 }

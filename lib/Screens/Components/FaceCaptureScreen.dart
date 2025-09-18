@@ -1,11 +1,14 @@
 import 'dart:io';
+import 'package:construction/Screens/Components/Home.dart';
 import 'package:image/image.dart' as img;
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 
 class FaceCaptureScreen extends StatefulWidget {
-  const FaceCaptureScreen({super.key});
+  const FaceCaptureScreen({super.key, required this.punchInTime});
+
+  final DateTime punchInTime;
 
   @override
   State<FaceCaptureScreen> createState() => _FaceCaptureScreenState();
@@ -26,17 +29,13 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen> {
   Future<void> initializeCamera() async {
     try {
       cameras = await availableCameras();
-      print('Available cameras: $cameras');
-
       CameraDescription frontCamera = cameras.firstWhere(
         (camera) => camera.lensDirection == CameraLensDirection.front,
         orElse: () => throw Exception('Front camera not found'),
       );
 
       _controller = CameraController(frontCamera, ResolutionPreset.high);
-
       await _controller.initialize();
-      print('Camera initialized successfully');
 
       if (mounted) {
         setState(() {
@@ -63,7 +62,7 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen> {
         return;
       }
 
-      // Correct the orientation by rotating (90 degrees counter-clockwise)
+      // Rotate to correct orientation
       img.Image orientedImage = img.copyRotate(originalImage, -90);
 
       int centerX = orientedImage.width ~/ 2;
@@ -103,9 +102,7 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen> {
       final circularFile = File(circularFilePath);
       await circularFile.writeAsBytes(circularBytes);
 
-      print('Correctly Oriented Circular Image Saved at $circularFilePath');
-
-      // ✅ Punch Out Success Popup
+      // Punch Out Success Popup
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -144,31 +141,37 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen> {
                     const SizedBox(height: 12),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: const [
+                      children: [
                         Column(
                           children: [
-                            Text(
+                            const Text(
                               'Punch In Time',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
                               ),
                             ),
-                            SizedBox(height: 4),
-                            Text('09:00 AM', style: TextStyle(fontSize: 14)),
+                            const SizedBox(height: 4),
+                            Text(
+                              '${widget.punchInTime.hour}:${widget.punchInTime.minute}',
+                              style: const TextStyle(fontSize: 14),
+                            ),
                           ],
                         ),
                         Column(
                           children: [
-                            Text(
+                            const Text(
                               'Punch Out Time',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
                               ),
                             ),
-                            SizedBox(height: 4),
-                            Text('06:00 PM', style: TextStyle(fontSize: 14)),
+                            const SizedBox(height: 4),
+                            Text(
+                              '${DateTime.now().hour}:${DateTime.now().minute}',
+                              style: const TextStyle(fontSize: 14),
+                            ),
                           ],
                         ),
                       ],
@@ -177,7 +180,19 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: () => Navigator.of(context).pop(),
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) => HomeScreen(
+                                    selectedLanguageCode: 'en',
+                                    onLanguageChanged: (code) {},
+                                  ),
+                            ),
+                          );
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.deepOrange,
                           shape: RoundedRectangleBorder(
@@ -232,8 +247,6 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen> {
       await _controller.initialize();
 
       setState(() {});
-
-      print('Switched camera successfully');
     } catch (e) {
       print('Camera switch error: $e');
     }
@@ -249,7 +262,7 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Center(child: const Text('Location')),
+        title: const Center(child: Text('Location')),
         backgroundColor: Colors.white,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -260,57 +273,32 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen> {
           _isCameraInitialized
               ? Stack(
                 children: [
-                  SizedBox.expand(
-                    child: FittedBox(
-                      fit: BoxFit.cover,
-                      child: SizedBox(
-                        width: _controller.value.previewSize!.height,
-                        height: _controller.value.previewSize!.width,
-                        child: CameraPreview(_controller),
-                      ),
-                    ),
-                  ),
+                  // Camera preview full screen
+                  SizedBox.expand(child: CameraPreview(_controller)),
 
-                  // ✅ Circular Blur Mask Layer
+                  // Fade overlay outside circle using ClipPath
                   Positioned.fill(
-                    child: Stack(
-                      children: [
-                        Container(
-                          color: Colors.black.withOpacity(
-                            0.5,
-                          ), // Outer dark overlay
-                        ),
-                        Center(
-                          child: ClipOval(
-                            child: Container(
-                              width: 250,
-                              height: 250,
-                              color:
-                                  Colors
-                                      .transparent, // Fully transparent area inside circle
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  Positioned(
-                    top: 160,
-                    left: 0,
-                    right: 0,
-                    child: Center(
+                    child: ClipPath(
+                      clipper: OuterCircleClipper(circleRadius: 150),
                       child: Container(
-                        width: 300,
-                        height: 300,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 4),
-                        ),
+                        color: Colors.white.withOpacity(0.3), // fade color
                       ),
                     ),
                   ),
 
+                  // Circle border
+                  Center(
+                    child: Container(
+                      width: 300,
+                      height: 300,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 4),
+                      ),
+                    ),
+                  ),
+
+                  // Text instructions
                   Positioned(
                     bottom: 180,
                     left: 20,
@@ -328,7 +316,7 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen> {
                         ),
                         SizedBox(height: 8),
                         Text(
-                          'Align Your Face To The Center Of The Selfie Area And Then Take Photo',
+                          'Align your face inside the circle then take photo',
                           style: TextStyle(color: Colors.white, fontSize: 14),
                           textAlign: TextAlign.center,
                         ),
@@ -336,6 +324,7 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen> {
                     ),
                   ),
 
+                  // Bottom buttons
                   Positioned(
                     bottom: 50,
                     left: 0,
@@ -380,22 +369,22 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen> {
   }
 }
 
-/// ✅ Proper Circular Clipper Implementation
-class CircleClipper extends CustomClipper<Path> {
+// Clipper for fading outside the circle
+class OuterCircleClipper extends CustomClipper<Path> {
+  final double circleRadius;
+  OuterCircleClipper({required this.circleRadius});
+
   @override
   Path getClip(Size size) {
-    Path fullScreen =
-        Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
-
+    Path full = Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
     Path circle =
         Path()..addOval(
           Rect.fromCircle(
-            center: Offset(size.width / 2, size.height / 2 - 40),
-            radius: 125,
+            center: Offset(size.width / 2, size.height / 2),
+            radius: circleRadius,
           ),
         );
-
-    return Path.combine(PathOperation.difference, fullScreen, circle);
+    return Path.combine(PathOperation.difference, full, circle);
   }
 
   @override

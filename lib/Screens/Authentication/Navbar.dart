@@ -50,10 +50,17 @@ class _NavbarState extends State<Navbar> {
                         setState(() => selectedIndex = 0);
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => HomeScreen(
- selectedLanguageCode: 'en', // Provide a default or get it from context/state
- onLanguageChanged: (code) {}, // Provide an empty function or a real one
- )),
+                          MaterialPageRoute(
+                            builder:
+                                (context) => HomeScreen(
+                                  selectedLanguageCode:
+                                      'en', // Provide a default or get it from context/state
+                                  onLanguageChanged:
+                                      (
+                                        code,
+                                      ) {}, // Provide an empty function or a real one
+                                ),
+                          ),
                         );
                       },
                       child: Column(

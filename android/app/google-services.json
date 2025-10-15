@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "847301739878",
+    "project_id": "construction-be459",
+    "storage_bucket": "construction-be459.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:847301739878:android:531a094fe5e6be9688f4a7",
+        "android_client_info": {
+          "package_name": "com.example.construction"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAi8e9-en_zFa89vX3dmEQ6mCq-7ryHRhI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

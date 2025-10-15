@@ -7,8 +7,6 @@ import 'package:construction/Screens/Authentication/Navbar.dart';
 import 'package:construction/Screens/Components/Payment_History.dart';
 import 'dart:io';
 
-
-
 // ✅ Logout popup function
 void showLogoutPopup(BuildContext context) {
   showDialog(
